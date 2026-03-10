@@ -4,41 +4,41 @@ import { useState, useEffect } from "react"
 
 const NAV = [
     {
-        group: "Getting Started",
+        group: 'Getting Started',
         items: [
-            { href: "/docs", label: "Introduction" },
-            { href: "/docs/installation", label: "Installation" },
+            { label: 'Introduction', href: '/docs' },
+            { label: 'Installation', href: '/docs/installation' },
             { href: "/docs/project-structure", label: "Project Structure" },
-        ]
+        ],
     },
     {
-        group: "Core Concepts",
+        group: 'Core',
         items: [
-            { href: "/docs/routing", label: "Pages & Routing" },
-            { href: "/docs/layouts", label: "Layouts" },
-            { href: "/docs/client-components", label: "Client Components" },
-            { href: "/docs/api-routes", label: "API Routes" },
-            { href: "/docs/middleware", label: "Middleware" },
-            { href: "/docs/navigation", label: "Navigation" },
-            { href: "/docs/static-files", label: "Static Files" },
-            { href: "/docs/head-management", label: "useHtml()" },
-        ]
+            { label: 'Routing', href: '/docs/routing' },
+            { label: 'Layouts', href: '/docs/layouts' },
+            { label: 'Client Components', href: '/docs/client-components' },
+            { label: 'Link & Navigation', href: '/docs/link-navigation' },
+            { label: 'API Routes', href: '/docs/api-routes' },
+            { label: 'Middleware', href: '/docs/middleware' },
+            { label: 'Static Files', href: '/docs/static-files' },
+        ],
     },
     {
-        group: "Configuration",
+        group: 'Advanced',
         items: [
-            { href: "/docs/configuration", label: "nuke.config.ts" },
-            { href: "/docs/deploying", label: "Deploying" },
-        ]
+            { label: 'useHtml()', href: '/docs/head-management' },
+            { label: 'Configuration', href: '/docs/configuration' },
+            { label: 'Deploying', href: '/docs/deploying' },
+        ],
     },
     {
-        group: "Integrations",
+        group: 'Examples',
         items: [
-            { href: "/docs/examples/tailwindcss", label: "Tailwind CSS" },
-            { href: "/docs/examples/prisma", label: "Prisma" },
-            { href: "/docs/examples/mongoose", label: "Mongoose" },
-            { href: "/docs/examples/orpc", label: "oRPC" },
-        ]
+            { label: 'Tailwind CSS', href: '/docs/examples/tailwindcss' },
+            { label: 'Prisma', href: '/docs/examples/prisma' },
+            { label: 'Mongoose', href: '/docs/examples/mongoose' },
+            { label: 'oRPC', href: '/docs/examples/orpc' },
+        ],
     },
 ]
 

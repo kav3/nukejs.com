@@ -5,13 +5,11 @@ export default function ClientComponentsPage() {
     const title = "Client Components"
     const subtitle = 'Add "use client" to any component to opt it into the browser bundle. Everything else is server-only by default.'
     useHtml({ title })
-    const prev = { href: "/docs/layouts", label: "Layouts" }
-    const next = { href: "/docs/api-routes", label: "API Routes" }
     return (
         <article className="doc-article">
             <header className="doc-article-header">
                 <h1 className="doc-article-title">{title}</h1>
-                {subtitle && <p className="doc-article-subtitle">{subtitle}</p>}
+                <p className="doc-article-subtitle">{subtitle}</p>
             </header>
 
             <div className="doc-body">
@@ -61,21 +59,13 @@ export default async function Home() {
                     </div>
                     <div className="doc-step">
                         <span className="doc-step-num">2</span>
-                        <div className="doc-step-body"><p>During SSR, emits a <code>&lt;span data-hydrate-id="…"&gt;</code> placeholder with serialized props</p></div>
+                        <div className="doc-step-body"><p>During SSR, emits a <code>{'<span data-hydrate-id="…">'}</code> placeholder with serialized props</p></div>
                     </div>
                     <div className="doc-step">
                         <span className="doc-step-num">3</span>
                         <div className="doc-step-body"><p>In the browser, the NukeJS runtime fetches the bundle and mounts the component with React</p></div>
                     </div>
                 </div>
-
-                <h2>Rules</h2>
-                <ul>
-                    <li><code>"use client"</code> must be the <strong>first non-comment line</strong> of the file</li>
-                    <li>The component must have a <strong>named default export</strong> (NukeJS uses the function name during hydration)</li>
-                    <li>Props must be <strong>JSON-serializable</strong> — no functions, no class instances, no Dates</li>
-                    <li>React elements (children, slots) <em>are</em> supported — NukeJS serializes and reconstructs them</li>
-                </ul>
 
                 <h2>Passing children from server to client</h2>
                 <p>You can pass JSX from a server component into a client component. NukeJS serializes the tree and reconstructs it in the browser before mounting:</p>
@@ -97,7 +87,7 @@ export default function Dialog({ children }: { children: React.ReactNode }) {
         </>
     )
 }`} />
-                <CodeBlock filename="app/pages/index.tsx (server)" code={`import Dialog from '../components/Dialog'
+                <CodeBlock filename="app/pages/index.tsx" code={`import Dialog from '../components/Dialog'
 
 export default async function Home() {
     const terms = await fetchTermsOfService() // server fetch
@@ -110,12 +100,20 @@ export default async function Home() {
     )
 }`} />
 
+                <h2>Rules</h2>
+                <ul>
+                    <li><code>"use client"</code> must be the <strong>first non-comment line</strong> of the file</li>
+                    <li>The component must have a <strong>named default export</strong> — NukeJS uses the function name during hydration</li>
+                    <li>Props must be <strong>JSON-serializable</strong> — no functions, no class instances, no Dates</li>
+                    <li>React elements (children, slots) <em>are</em> supported — NukeJS serializes and reconstructs them</li>
+                </ul>
+
                 <div className="doc-callout tip">
                     <span className="doc-callout-icon">✅</span>
                     <div className="doc-callout-body">
-                        <strong>Keep client components lean</strong>
-                        The smaller a client component, the smaller its bundle. Move data fetching and static markup
-                        into server components and pass results down as props.
+                        <strong>Keep client components lean</strong>{" "}
+                        The smaller a client component, the smaller its bundle. Move data fetching and static
+                        markup into server components and pass results down as props.
                     </div>
                 </div>
             </div>

@@ -5,13 +5,11 @@ export default function MiddlewarePage() {
     const title = "Middleware"
     const subtitle = "A single middleware.ts intercepts every request before routing — ideal for auth, logging, CORS, and custom headers."
     useHtml({ title })
-    const prev = { href: "/docs/api-routes", label: "API Routes" }
-    const next = { href: "/docs/navigation", label: "Navigation" }
     return (
         <article className="doc-article">
             <header className="doc-article-header">
                 <h1 className="doc-article-title">{title}</h1>
-                {subtitle && <p className="doc-article-subtitle">{subtitle}</p>}
+                <p className="doc-article-subtitle">{subtitle}</p>
             </header>
 
             <div className="doc-body">
@@ -77,7 +75,7 @@ export default async function middleware(
     }
 }`} />
 
-                <h2>Rate limiting (simple)</h2>
+                <h2>Rate limiting</h2>
                 <CodeBlock filename="middleware.ts" code={`const requests = new Map<string, number[]>()
 
 export default async function middleware(req, res) {
@@ -97,10 +95,27 @@ export default async function middleware(req, res) {
     }
 }`} />
 
+                <h2>URL rewriting</h2>
+                <p>Rewrite the request URL before routing to serve the same content under a different path:</p>
+                <CodeBlock filename="middleware.ts" code={`export default async function middleware(req, res) {
+    // Serve /home from the index route
+    if (req.url === '/home') {
+        req.url = '/'
+    }
+
+    // Redirect legacy /old-path to /new-path
+    if (req.url?.startsWith('/old-path')) {
+        res.statusCode = 301
+        res.setHeader('Location', req.url.replace('/old-path', '/new-path'))
+        res.end()
+        return
+    }
+}`} />
+
                 <div className="doc-callout warning">
                     <span className="doc-callout-icon">⚠️</span>
                     <div className="doc-callout-body">
-                        <strong>One middleware file only</strong>
+                        <strong>One middleware file only</strong>{" "}
                         NukeJS supports a single <code>middleware.ts</code> at the project root.
                         Dispatch to different handlers inside that one file based on <code>req.url</code>.
                     </div>

@@ -5,13 +5,11 @@ export default function HeadManagementPage() {
     const title = "useHtml()"
     const subtitle = "Control the document head from any component — titles, meta tags, Open Graph, canonical links, JSON-LD, and HTML attributes."
     useHtml({ title })
-    const prev = { href: "/docs/static-files", label: "Static Files" }
-    const next = { href: "/docs/configuration", label: "Configuration" }
     return (
         <article className="doc-article">
             <header className="doc-article-header">
                 <h1 className="doc-article-title">{title}</h1>
-                {subtitle && <p className="doc-article-subtitle">{subtitle}</p>}
+                <p className="doc-article-subtitle">{subtitle}</p>
             </header>
 
             <div className="doc-body">
@@ -64,6 +62,22 @@ useHtml({ title: (prev) => \`\${prev} | My Site\` })`} />
 useHtml({ title: 'About Us' })
 // Result: "About Us | My Site"`} />
                 <p>The page title is always the base. Layout functions wrap it outward, from innermost to outermost layout.</p>
+
+                <h2>Inline scripts</h2>
+                <p>Pass <code>children</code> in a script entry for inline JavaScript. Use <code>src</code> for external scripts:</p>
+                <CodeBlock filename="app/pages/layout.tsx" code={`useHtml({
+    script: [
+        // External async script
+        { src: 'https://www.googletagmanager.com/gtag/js?id=G-XXXXXX', type: 'text/javascript' },
+        // Inline init script
+        { type: 'text/javascript', children: \`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-XXXXXX');
+        \` },
+    ]
+})`} />
 
                 <h2>Inline JSON-LD structured data</h2>
                 <CodeBlock filename="app/pages/index.tsx" code={`const jsonLd = {

@@ -5,19 +5,16 @@ export default function RoutingPage() {
     const title = "Pages & Routing"
     const subtitle = "NukeJS maps your file system directly to URL routes — no router config, no imports required."
     useHtml({ title })
-    const prev = { href: "/docs/project-structure", label: "Project Structure" }
-    const next = { href: "/docs/layouts", label: "Layouts" }
     return (
         <article className="doc-article">
             <header className="doc-article-header">
                 <h1 className="doc-article-title">{title}</h1>
-                {subtitle && <p className="doc-article-subtitle">{subtitle}</p>}
+                <p className="doc-article-subtitle">{subtitle}</p>
             </header>
 
             <div className="doc-body">
                 <h2>File → URL mapping</h2>
                 <p>Every <code>.tsx</code> file inside <code>app/pages/</code> that exports a default component becomes a route.</p>
-
                 <div className="doc-table-wrap">
                     <table className="doc-table">
                         <thead><tr><th>File</th><th>URL</th></tr></thead>
@@ -27,13 +24,13 @@ export default function RoutingPage() {
                             <tr><td>app/pages/blog/index.tsx</td><td>/blog</td></tr>
                             <tr><td>app/pages/blog/[slug].tsx</td><td>/blog/:slug</td></tr>
                             <tr><td>app/pages/docs/[...path].tsx</td><td>/docs/* (catch-all)</td></tr>
-                            <tr><td>app/pages/files/[[...path]].tsx</td><td>/files or /files/* (optional catch-all)</td></tr>
+                            <tr><td>app/pages/files/[[...path]].tsx</td><td>/files or /files/*</td></tr>
                         </tbody>
                     </table>
                 </div>
 
                 <h2>Basic page</h2>
-                <p>Pages can be <code>async</code> — async code runs on the server before the HTML is sent:</p>
+                <p>Pages can be <code>async</code> — async code runs on the server before HTML is sent:</p>
                 <CodeBlock filename="app/pages/index.tsx" code={`export default async function Home() {
     const posts = await db.getPosts() // runs on server, no JS sent to browser
 
@@ -56,7 +53,6 @@ export default function RoutingPage() {
     const post = await fetchPost(slug)
 
     if (!post) {
-        // handle 404 however you like
         return <h1>Post not found</h1>
     }
 
@@ -68,10 +64,39 @@ export default function RoutingPage() {
     )
 }`} />
 
+                <h2>Route params and query strings</h2>
+                <p>
+                    Dynamic route segments and URL search params are both passed as props.
+                    NukeJS merges them into a single flat object so you always have one place to look:
+                </p>
+                <CodeBlock filename="app/pages/products/[id].tsx" code={`// Handles: /products/42?tab=reviews&page=2
+export default async function Product({
+    id,                // ← from the [id] route segment
+    tab = 'overview',  // ← from ?tab=reviews  (defaults when missing)
+    page = '1',        // ← from ?page=2       (defaults when missing)
+}: {
+    id: string
+    tab?: string
+    page?: string
+}) {
+    const product = await fetchProduct(id)
+
+    return (
+        <main>
+            <h1>{product.name}</h1>
+            <TabBar active={tab} productId={id} />
+            {tab === 'reviews' && (
+                <ReviewList productId={id} page={Number(page)} />
+            )}
+        </main>
+    )
+}`} />
+                <p>All values arrive as strings — parse numbers and booleans explicitly as needed.</p>
+
                 <h2>Catch-all routes</h2>
-                <p>Use <code>[...param]</code> to match one or more path segments. The value is a <code>string[]</code>:</p>
+                <p>Use <code>[...param]</code> to match one or more segments. The value is a <code>string[]</code>:</p>
                 <CodeBlock filename="app/pages/docs/[...path].tsx" code={`export default function Docs({ path }: { path: string[] }) {
-    // /docs/getting-started/installation → path = ['getting-started', 'installation']
+    // /docs/getting-started/install → path = ['getting-started', 'install']
     return <DocViewer segments={path} />
 }`} />
                 <p>Use <code>[[...param]]</code> (double brackets) to also match the route with no trailing segments.</p>
@@ -85,8 +110,8 @@ export default function RoutingPage() {
                 <div className="doc-callout info">
                     <span className="doc-callout-icon">ℹ️</span>
                     <div className="doc-callout-body">
-                        <strong>layout.tsx is never a route</strong>
-                        Files named <code>layout.tsx</code> are always treated as layout wrappers, never as routes.
+                        <strong>layout.tsx is never a route</strong>{" "}
+                        Files named <code>layout.tsx</code> are always treated as layout wrappers.
                         Visiting <code>/blog/layout</code> will not match <code>app/pages/blog/layout.tsx</code>.
                     </div>
                 </div>

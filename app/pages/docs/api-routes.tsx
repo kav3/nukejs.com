@@ -5,13 +5,11 @@ export default function ApiRoutesPage() {
     const title = "API Routes"
     const subtitle = "Export named HTTP method handlers from files in server/ and they become fully typed API endpoints."
     useHtml({ title })
-    const prev = { href: "/docs/client-components", label: "Client Components" }
-    const next = { href: "/docs/middleware", label: "Middleware" }
     return (
         <article className="doc-article">
             <header className="doc-article-header">
                 <h1 className="doc-article-title">{title}</h1>
-                {subtitle && <p className="doc-article-subtitle">{subtitle}</p>}
+                <p className="doc-article-subtitle">{subtitle}</p>
             </header>
 
             <div className="doc-body">
@@ -56,6 +54,21 @@ export async function DELETE(req: ApiRequest, res: ApiResponse) {
     res.status(204).end()
 }`} />
 
+                <h2>Query string parameters</h2>
+                <p>Query params land in <code>req.query</code> as plain strings alongside <code>req.params</code>:</p>
+                <CodeBlock filename="server/products/[id].ts  →  /products/:id?include=reviews" code={`export async function GET(req: ApiRequest, res: ApiResponse) {
+    const { id } = req.params as { id: string }
+    const { include } = req.query   // e.g. ?include=reviews
+
+    const product = await db.getProduct(id)
+
+    if (include === 'reviews') {
+        product.reviews = await db.getReviews(id)
+    }
+
+    res.json(product)
+}`} />
+
                 <h2>Request object</h2>
                 <div className="doc-table-wrap">
                     <table className="doc-table">
@@ -83,16 +96,9 @@ export async function DELETE(req: ApiRequest, res: ApiResponse) {
                     </table>
                 </div>
 
-                <h2>Query string parameters</h2>
-                <CodeBlock filename="server/search.ts  →  GET /search?q=nuke&page=2" code={`export async function GET(req: ApiRequest, res: ApiResponse) {
-    const { q = '', page = '1' } = req.query
-    const results = await search(q, parseInt(page))
-    res.json({ results, page: parseInt(page) })
-}`} />
-
                 <h2>Calling API logic from pages</h2>
                 <p>Because pages are server components, you can import and call your database layer directly — skipping the HTTP round-trip entirely:</p>
-                <CodeBlock filename="app/pages/users.tsx" code={`import { getUsers } from '../../lib/db' // import DB directly
+                <CodeBlock filename="app/pages/users.tsx" code={`import { getUsers } from '../../lib/db'
 
 export default async function UsersPage() {
     const users = await getUsers() // no fetch() needed
@@ -107,8 +113,9 @@ export default async function UsersPage() {
                 <div className="doc-callout info">
                     <span className="doc-callout-icon">ℹ️</span>
                     <div className="doc-callout-body">
-                        <strong>API routes are for your frontend clients</strong>
-                        Server-rendered pages can call database code directly. API routes are most useful for client components making <code>fetch()</code> calls, or for third-party integrations consuming your endpoints.
+                        <strong>API routes are for your frontend clients</strong>{" "}
+                        Server-rendered pages can call database code directly. API routes are most useful
+                        for client components making <code>fetch()</code> calls, or for third-party integrations.
                     </div>
                 </div>
             </div>
