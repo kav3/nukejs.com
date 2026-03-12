@@ -1,11 +1,16 @@
 import { useHtml } from "nukejs"
 import CodeBlock from "../../../components/docs/CodeBlock"
 
-export default function OrpcPage() {
+export default function ORPCPage() {
     const title = "oRPC"
-    const subtitle = "Add end-to-end type-safe RPC to NukeJS with oRPC. Define your procedures on the server, call them from client components with full TypeScript inference."
+    const subtitle =
+        "Type-safe RPC for TypeScript. Define procedures on the server and call them from the client with full end-to-end type inference."
+
     useHtml({ title })
+
     const prev = { href: "/docs/examples/mongoose", label: "Mongoose" }
+    const next = { href: "/docs/examples/prisma", label: "Prisma" }
+
     return (
         <article className="doc-article">
             <header className="doc-article-header">
@@ -14,221 +19,157 @@ export default function OrpcPage() {
             </header>
 
             <div className="doc-body">
+
                 <div className="doc-integration-badge">Integration</div>
 
-                <h2>What is oRPC?</h2>
                 <p>
-                    oRPC is a TypeScript-first RPC library. You define typed procedures on the server and call them
-                    from the client — like tRPC but with a cleaner API and no adapter layer needed.
-                    With NukeJS you expose oRPC through a catch-all API route.
+                    <a href="https://orpc.dev" target="_blank" rel="noopener noreferrer">
+                        oRPC
+                    </a>{" "}
+                    is a type-safe RPC library for TypeScript. It lets you define
+                    server procedures and call them from both server components and
+                    client components with full type safety.
                 </p>
 
                 <h2>Install</h2>
-                <CodeBlock language="bash" filename="terminal" code={`npm install @orpc/server @orpc/client @orpc/react-query
-npm install @tanstack/react-query`} />
+
+                <CodeBlock
+                    language="bash"
+                    filename="terminal"
+                    code={`npm install @orpc/server @orpc/client`}
+                />
 
                 <h2>Define your router</h2>
-                <p>Create a file that defines all your procedures. This runs on the server only:</p>
-                <CodeBlock filename="lib/orpc/router.ts" code={`import { os, ORPCError } from '@orpc/server'
-import { z } from 'zod'
-import { prisma } from '../db'  // or your DB of choice
 
-// Base procedure builder
-const pub = os  // public procedures
-
-// Authenticated procedure (extend with auth middleware)
-const authed = os.use(async ({ context, next }) => {
-    const token = context?.headers?.authorization?.split(' ')[1]
-    if (!token) throw new ORPCError({ code: 'UNAUTHORIZED' })
-    const user = await verifyToken(token)
-    return next({ context: { user } })
-})
+                <CodeBlock
+                    language="typescript"
+                    filename="router.ts"
+                    code={`import { os } from "@orpc/server";
 
 export const router = {
-    posts: {
-        list: pub
-            .input(z.object({ limit: z.number().min(1).max(100).default(10) }))
-            .handler(async ({ input }) => {
-                return prisma.post.findMany({
-                    where: { published: true },
-                    orderBy: { createdAt: 'desc' },
-                    take: input.limit,
-                })
-            }),
+  time: {
+    getCurrent: os.handler(() => {
+      return Date.now();
+    })
+  }
+};`}
+                />
 
-        bySlug: pub
-            .input(z.object({ slug: z.string() }))
-            .handler(async ({ input }) => {
-                const post = await prisma.post.findUnique({
-                    where: { slug: input.slug },
-                })
-                if (!post) throw new ORPCError({ code: 'NOT_FOUND' })
-                return post
-            }),
+                <h2>Create the client</h2>
 
-        create: authed
-            .input(z.object({ title: z.string().min(1), content: z.string() }))
-            .handler(async ({ input, context }) => {
-                return prisma.post.create({
-                    data: {
-                        ...input,
-                        slug: input.title.toLowerCase().replace(/\\s+/g, '-'),
-                        authorId: context.user.id,
-                    },
-                })
-            }),
-    },
+                <CodeBlock
+                    language="typescript"
+                    filename="client.ts"
+                    code={`import { createORPCClient } from '@orpc/client'
+import { RPCLink } from '@orpc/client/fetch'
+import type { RouterClient } from '@orpc/server'
+import type { router } from './router'
 
-    users: {
-        me: authed
-            .handler(async ({ context }) => {
-                return prisma.user.findUnique({
-                    where: { id: context.user.id },
-                    select: { id: true, email: true, name: true },
-                })
-            }),
-    },
+const baseURL =
+  typeof window !== 'undefined'
+    ? \`\${window.location.origin}/rpc\`
+    : process.env.RPC_URL || 'http://localhost:3000/rpc'
+
+const link = new RPCLink({ url: baseURL })
+
+export const orpc: RouterClient<typeof router> =
+  createORPCClient(link)`}
+                />
+
+                <h2>Register the RPC handler</h2>
+
+                <CodeBlock
+                    language="typescript"
+                    filename="server/rpc/[...rest].ts"
+                    code={`import { RPCHandler } from '@orpc/server/node'
+import { onError } from '@orpc/server'
+import { router } from '../../router'
+
+const handler = new RPCHandler(router, {
+  interceptors: [
+    onError((error) => {
+      console.error(error)
+    })
+  ]
+})
+
+async function handleRequest(req: any, res: any) {
+  const { matched } = await handler.handle(req, res, {
+    prefix: '/rpc',
+    context: {}
+  })
+
+  if (matched) return
+
+  res.json({ error: 404 })
 }
 
-export type Router = typeof router`} />
+export const HEAD = handleRequest
+export const GET = handleRequest
+export const POST = handleRequest
+export const PUT = handleRequest
+export const PATCH = handleRequest
+export const DELETE = handleRequest`}
+                />
 
-                <h2>Expose via a NukeJS API route</h2>
-                <p>Mount the oRPC handler on a catch-all API route:</p>
-                <CodeBlock filename="server/rpc/[...path].ts" code={`import type { ApiRequest, ApiResponse } from 'nukejs'
-import { createServer } from '@orpc/server/node'
-import { router } from '../../lib/orpc/router'
+                <h2>Call procedures from a server page</h2>
 
-const handler = createServer(router)
+                <CodeBlock
+                    language="typescript"
+                    filename="app/pages/index.tsx"
+                    code={`import { useHtml } from "nukejs"
+import { orpc } from "../../client"
 
-export async function POST(req: ApiRequest, res: ApiResponse) {
-    // Pass raw Node req/res to oRPC
-    await handler(req as any, res as any)
-}`} />
+export default async function Index() {
+  useHtml({ title: "Home" })
 
-                <h2>Create a typed client</h2>
-                <p>Generate a fully typed client from your router type. Import this in client components:</p>
-                <CodeBlock filename="lib/orpc/client.ts" code={`import { createClient } from '@orpc/client'
-import type { Router } from './router'
+  const currentTime = await orpc.time.getCurrent()
 
-export const orpc = createClient<Router>({
-    baseURL: '/rpc',
-})`} />
+  return (
+    <main>
+      <h1>Server time</h1>
+      <p>{currentTime}</p>
+    </main>
+  )
+}`}
+                />
 
                 <h2>Call procedures from a client component</h2>
-                <CodeBlock filename="app/components/PostList.tsx" code={`"use client"
-import { useState, useEffect } from 'react'
-import { orpc } from '../../lib/orpc/client'
 
-export default function PostList() {
-    const [posts, setPosts] = useState<any[]>([])
-    const [loading, setLoading] = useState(true)
+                <CodeBlock
+                    language="typescript"
+                    filename="app/components/TimeDisplay.tsx"
+                    code={`"use client"
 
-    useEffect(() => {
-        orpc.posts.list({ limit: 5 }).then(data => {
-            setPosts(data)
-            setLoading(false)
-        })
-    }, [])
+import { useState } from "react"
+import { orpc } from "../../client"
 
-    if (loading) return <p>Loading…</p>
+export default function TimeDisplay() {
+  const [time, setTime] = useState<number | null>(null)
 
-    return (
-        <ul>
-            {posts.map(post => (
-                <li key={post.id}>
-                    <a href={'/blog/' + post.slug}>{post.title}</a>
-                </li>
-            ))}
-        </ul>
-    )
-}`} />
+  async function refresh() {
+    setTime(await orpc.time.getCurrent())
+  }
 
-                <h2>With React Query (recommended)</h2>
-                <p>Combine oRPC with TanStack Query for caching, refetching, and mutations in client components:</p>
-                <CodeBlock filename="app/components/Providers.tsx" code={`"use client"
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useState } from 'react'
-
-export default function Providers({ children }: { children: React.ReactNode }) {
-    const [queryClient] = useState(() => new QueryClient())
-    return (
-        <QueryClientProvider client={queryClient}>
-            {children}
-        </QueryClientProvider>
-    )
-}`} />
-                <CodeBlock filename="app/pages/layout.tsx" code={`import Providers from '../components/Providers'
-
-export default function Layout({ children }: { children: React.ReactNode }) {
-    return <Providers>{children}</Providers>
-}`} />
-                <CodeBlock filename="app/components/PostListWithQuery.tsx" code={`"use client"
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { orpc } from '../../lib/orpc/client'
-
-export default function PostListWithQuery() {
-    const queryClient = useQueryClient()
-
-    // Fetch posts with caching
-    const { data: posts, isLoading } = useQuery({
-        queryKey: ['posts'],
-        queryFn: () => orpc.posts.list({ limit: 10 }),
-    })
-
-    // Optimistic mutation
-    const createPost = useMutation({
-        mutationFn: (data: { title: string; content: string }) =>
-            orpc.posts.create(data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['posts'] })
-        },
-    })
-
-    if (isLoading) return <p>Loading…</p>
-
-    return (
-        <div>
-            <ul>
-                {posts?.map(post => <li key={post.id}>{post.title}</li>)}
-            </ul>
-            <button
-                onClick={() => createPost.mutate({ title: 'New Post', content: '…' })}
-                disabled={createPost.isPending}
-            >
-                {createPost.isPending ? 'Creating…' : 'New Post'}
-            </button>
-        </div>
-    )
-}`} />
-
-                <h2>Call procedures from server pages</h2>
-                <p>Because server pages run on the server, you can call your router procedures directly — bypassing HTTP entirely:</p>
-                <CodeBlock filename="app/pages/blog/index.tsx" code={`import { router } from '../../lib/orpc/router'
-
-export default async function BlogIndex() {
-    // Call procedure directly on the server — no fetch, no latency
-    const posts = await router.posts.list({ limit: 10 })
-
-    return (
-        <main>
-            {posts.map(post => (
-                <article key={post.id}>
-                    <h2>{post.title}</h2>
-                </article>
-            ))}
-        </main>
-    )
-}`} />
+  return (
+    <div>
+      <p>{time ?? "—"}</p>
+      <button onClick={refresh}>Refresh</button>
+    </div>
+  )
+}`}
+                />
 
                 <div className="doc-callout tip">
-                    <span className="doc-callout-icon">✅</span>
+                    <span className="doc-callout-icon">💡</span>
                     <div className="doc-callout-body">
-                        <strong>Best of both worlds</strong>
-                        Server pages call router procedures directly for zero-latency data access.
-                        Client components call the same procedures over HTTP via the typed client —
-                        with full TypeScript inference and no schema duplication.
+                        <strong>Type inference is automatic</strong>
+                        The client type is inferred from the router, so procedure
+                        arguments and return values are fully typed across the
+                        client and server without generating any code.
                     </div>
                 </div>
+
             </div>
         </article>
     )

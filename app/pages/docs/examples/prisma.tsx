@@ -95,50 +95,59 @@ export default async function BlogIndex() {
 
                 <h2>Use Prisma in API routes</h2>
                 <p>Full CRUD via API routes — useful for client components that need to mutate data:</p>
-                <CodeBlock filename="server/posts/index.ts" code={`import type { ApiRequest, ApiResponse } from 'nukejs'
+                <CodeBlock filename="server/posts/index.ts" code={`import type { IncomingMessage, ServerResponse } from 'http'
 import { prisma } from '../../lib/db'
 
-export async function GET(req: ApiRequest, res: ApiResponse) {
+export async function GET(req: IncomingMessage, res: ServerResponse) {
     const posts = await prisma.post.findMany({
         where: { published: true },
         orderBy: { createdAt: 'desc' },
     })
-    res.json(posts)
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(posts))
 }
 
-export async function POST(req: ApiRequest, res: ApiResponse) {
+export async function POST(req: IncomingMessage & { body: any }, res: ServerResponse) {
     const { title, content, authorId } = req.body
 
     const post = await prisma.post.create({
         data: { title, content, authorId },
     })
 
-    res.json(post, 201)
+    res.writeHead(201, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(post))
 }`} />
-                <CodeBlock filename="server/posts/[id].ts" code={`import type { ApiRequest, ApiResponse } from 'nukejs'
+                <CodeBlock filename="server/posts/[id].ts" code={`import type { IncomingMessage, ServerResponse } from 'http'
 import { prisma } from '../../lib/db'
 
-export async function GET(req: ApiRequest, res: ApiResponse) {
+export async function GET(req: IncomingMessage & { params: any }, res: ServerResponse) {
     const id = parseInt(req.params.id as string)
     const post = await prisma.post.findUnique({ where: { id } })
 
-    if (!post) { res.json({ error: 'Not found' }, 404); return }
-    res.json(post)
+    if (!post) {
+        res.writeHead(404, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: 'Not found' }))
+        return
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(post))
 }
 
-export async function PATCH(req: ApiRequest, res: ApiResponse) {
+export async function PATCH(req: IncomingMessage & { params: any; body: any }, res: ServerResponse) {
     const id = parseInt(req.params.id as string)
     const post = await prisma.post.update({
         where: { id },
         data: req.body,
     })
-    res.json(post)
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(post))
 }
 
-export async function DELETE(req: ApiRequest, res: ApiResponse) {
+export async function DELETE(req: IncomingMessage & { params: any }, res: ServerResponse) {
     const id = parseInt(req.params.id as string)
     await prisma.post.delete({ where: { id } })
-    res.status(204).end()
+    res.writeHead(204)
+    res.end()
 }`} />
 
                 <h2>Client component calling the API</h2>

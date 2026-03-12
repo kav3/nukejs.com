@@ -135,11 +135,11 @@ export default async function BlogPost({ slug }: { slug: string }) {
 }`} />
 
                 <h2>CRUD API routes</h2>
-                <CodeBlock filename="server/posts/index.ts" code={`import type { ApiRequest, ApiResponse } from 'nukejs'
+                <CodeBlock filename="server/posts/index.ts" code={`import type { IncomingMessage, ServerResponse } from 'http'
 import { connectDB } from '../../lib/mongoose'
 import Post from '../../lib/models/Post'
 
-export async function GET(req: ApiRequest, res: ApiResponse) {
+export async function GET(req: IncomingMessage & { query: any }, res: ServerResponse) {
     await connectDB()
 
     const { tag, limit = '20' } = req.query
@@ -151,42 +151,56 @@ export async function GET(req: ApiRequest, res: ApiResponse) {
         .select('title slug author tags createdAt')
         .lean()
 
-    res.json(posts)
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(posts))
 }
 
-export async function POST(req: ApiRequest, res: ApiResponse) {
+export async function POST(req: IncomingMessage & { body: any }, res: ServerResponse) {
     await connectDB()
 
     const { title, slug, content, author, tags } = req.body
     const post = await Post.create({ title, slug, content, author, tags })
-    res.json(post, 201)
+
+    res.writeHead(201, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(post))
 }`} />
-                <CodeBlock filename="server/posts/[id].ts" code={`import type { ApiRequest, ApiResponse } from 'nukejs'
+                <CodeBlock filename="server/posts/[id].ts" code={`import type { IncomingMessage, ServerResponse } from 'http'
 import { connectDB } from '../../lib/mongoose'
 import Post from '../../lib/models/Post'
 
-export async function GET(req: ApiRequest, res: ApiResponse) {
+export async function GET(req: IncomingMessage & { params: any }, res: ServerResponse) {
     await connectDB()
     const post = await Post.findById(req.params.id).lean()
-    if (!post) { res.json({ error: 'Not found' }, 404); return }
-    res.json(post)
+    if (!post) {
+        res.writeHead(404, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: 'Not found' }))
+        return
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(post))
 }
 
-export async function PATCH(req: ApiRequest, res: ApiResponse) {
+export async function PATCH(req: IncomingMessage & { params: any; body: any }, res: ServerResponse) {
     await connectDB()
     const post = await Post.findByIdAndUpdate(
         req.params.id,
         req.body,
         { new: true, runValidators: true }
     )
-    if (!post) { res.json({ error: 'Not found' }, 404); return }
-    res.json(post)
+    if (!post) {
+        res.writeHead(404, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: 'Not found' }))
+        return
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(post))
 }
 
-export async function DELETE(req: ApiRequest, res: ApiResponse) {
+export async function DELETE(req: IncomingMessage & { params: any }, res: ServerResponse) {
     await connectDB()
     await Post.findByIdAndDelete(req.params.id)
-    res.status(204).end()
+    res.writeHead(204)
+    res.end()
 }`} />
 
                 <div className="doc-callout tip">
