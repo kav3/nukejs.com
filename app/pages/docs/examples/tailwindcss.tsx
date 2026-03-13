@@ -1,12 +1,12 @@
 import { useHtml } from "nukejs"
 import CodeBlock from "../../../components/docs/CodeBlock"
 
-export default function TailwindPage() {
+export default function TailwindCSSPage() {
     const title = "Tailwind CSS"
     const subtitle = "Add Tailwind CSS to a NukeJS project. Because NukeJS controls the HTML pipeline you run Tailwind as a CLI watcher alongside the dev server."
     useHtml({ title })
-    const prev = { href: "/docs/deploying", label: "Deploying" }
-    const next = { href: "/docs/examples/prisma", label: "Prisma" }
+    const prev = { href: "/docs/examples/prisma", label: "Prisma" }
+    const next = { href: "/docs/examples/mongoose", label: "Mongoose" }
     return (
         <article className="doc-article">
             <header className="doc-article-header">
@@ -15,121 +15,125 @@ export default function TailwindPage() {
             </header>
 
             <div className="doc-body">
+                <div className="doc-callout warning">
+                    <span className="doc-callout-icon">⚠️</span>
+                    <div className="doc-callout-body">
+                        <strong>No plugins</strong>
+                        <p>NukeJS intentionally avoids using magic plugins to add features. It keeps everything minimal and simple so it’s easy for everyone to understand.</p>
+                    </div>
+                </div>
+
                 <div className="doc-integration-badge">Integration</div>
 
                 <h2>Install</h2>
                 <CodeBlock language="bash" filename="terminal" code={`npm install -D tailwindcss @tailwindcss/cli`} />
 
                 <h2>Create the CSS entry file</h2>
-                <p>Tailwind v4 uses a CSS-first approach. Create one CSS file that imports Tailwind and declares your source paths:</p>
-                <CodeBlock language="css" filename="app/styles/tailwind.css" code={`@import "tailwindcss";
+                <p>Tailwind v4 uses a CSS-first approach. Create a single file at the project root that imports the framework and adds any global base styles:</p>
+                <CodeBlock language="css" filename="global.css" code={`@import "tailwindcss";
 
-/* Tell Tailwind where to scan for class names */
-@source "../pages/**/*.tsx";
-@source "../components/**/*.tsx";`} />
+body {
+    @apply bg-blue-500;
+}`} />
+                <p>The Tailwind CLI reads this file, scans your TSX for class names, and writes the compiled output to <code>app/public/styles.css</code>. Never edit <code>styles.css</code> by hand — it is regenerated on every build.</p>
 
-                <h2>Add Tailwind output to public/</h2>
-                <p>Run the Tailwind CLI to compile your CSS into a file NukeJS can serve statically:</p>
-                <CodeBlock language="bash" filename="terminal" code={`# One-time build
-npx @tailwindcss/cli -i app/styles/tailwind.css -o app/public/tailwind.css
+                <h2>Start the watcher with middleware</h2>
+                <p>NukeJS loads <code>middleware.ts</code> before every request. Spawn the Tailwind CLI watcher there in development so it runs inside the same <code>nuke dev</code> process — no second terminal required:</p>
+                <CodeBlock filename="middleware.ts" code={`import { spawn } from 'child_process'
+import type { IncomingMessage, ServerResponse } from 'http'
 
-# Watch mode during development
-npx @tailwindcss/cli -i app/styles/tailwind.css -o app/public/tailwind.css --watch`} />
+if (process.env.ENVIRONMENT !== 'production') {
+    spawn(
+        'npx',
+        ['@tailwindcss/cli', '-i', './global.css', '-o', './app/public/styles.css', '--watch'],
+        { stdio: 'inherit', shell: true }
+    )
+}
 
-                <h2>Update package.json scripts</h2>
-                <p>Run Tailwind and NukeJS dev concurrently. Install <code>concurrently</code> for this:</p>
-                <CodeBlock language="bash" filename="terminal" code={`npm install -D concurrently`} />
-                <CodeBlock language="json" filename="package.json" code={`{
+export default async function middleware(req: IncomingMessage, res: ServerResponse) {
+    // your existing middleware logic
+}`} />
+                <p>The <code>ENVIRONMENT !== 'production'</code> guard ensures the watcher only runs locally. In production the CSS is compiled by the <code>build</code> script before NukeJS bundles the app.</p>
+
+                <h2>Update package.json</h2>
+                <p>Add a <code>build</code> script that compiles Tailwind first, then hands off to NukeJS:</p>
+                <CodeBlock filename="package.json" code={`{
     "scripts": {
-        "dev": "concurrently \\"nuke dev\\" \\"@tailwindcss/cli -i app/styles/tailwind.css -o app/public/tailwind.css --watch\\"",
-        "build:css": "@tailwindcss/cli -i app/styles/tailwind.css -o app/public/tailwind.css --minify",
-        "prebuild": "npm run build:css",
-        "build": "nuke build"
+        "dev": "nuke dev",
+        "build": "npx @tailwindcss/cli -i ./global.css -o ./app/public/styles.css && nuke build"
+    },
+    "devDependencies": {
+        "@tailwindcss/cli": "^4.2.1",
+        "tailwindcss": "^4.2.1"
     }
 }`} />
 
                 <h2>Load the stylesheet in your layout</h2>
-                <CodeBlock filename="app/pages/layout.tsx" code={`import { useHtml } from 'nukejs'
+                <p>NukeJS serves everything in <code>app/public/</code> as static files, so <code>/styles.css</code> resolves directly to the compiled output. Inject it into every page via the root layout:</p>
+                <CodeBlock filename="app/pages/layout.tsx" code={`import { useHtml } from "nukejs"
+import React from "react"
 
 export default function Layout({ children }: { children: React.ReactNode }) {
     useHtml({
-        link: [{ rel: 'stylesheet', href: '/tailwind.css' }]
+        link: [{ rel: 'stylesheet', href: '/styles.css' }],
     })
     return <>{children}</>
 }`} />
 
                 <h2>Use Tailwind classes</h2>
-                <p>Now use any Tailwind utility class in your components:</p>
-                <CodeBlock filename="app/pages/index.tsx" code={`export default async function Home() {
-    const posts = await db.getPosts()
+                <p>With the layout in place, use any Tailwind utility class in your page components:</p>
+                <CodeBlock filename="app/pages/index.tsx" code={`import { useHtml } from "nukejs"
+
+export default function Index() {
+    useHtml({
+        bodyAttrs: {
+            style: "margin:0;height:100vh;display:flex;justify-content:center;align-items:center;"
+        }
+    })
 
     return (
-        <main className="max-w-4xl mx-auto px-6 py-12">
-            <h1 className="text-4xl font-bold tracking-tight text-white mb-8">
-                Latest posts
-            </h1>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {posts.map(post => (
-                    <article
-                        key={post.id}
-                        className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 hover:border-orange-500 transition-colors"
-                    >
-                        <h2 className="text-lg font-semibold text-white mb-2">{post.title}</h2>
-                        <p className="text-zinc-400 text-sm leading-relaxed">{post.excerpt}</p>
-                        <a
-                            href={'/blog/' + post.slug}
-                            className="inline-block mt-4 text-orange-400 text-sm font-medium hover:text-orange-300"
-                        >
-                            Read more →
-                        </a>
-                    </article>
-                ))}
-            </div>
-        </main>
+        <div className="flex flex-col items-center gap-4 text-center px-6">
+            <img src="/nuke.png" alt="NukeJS logo" className="w-24 h-24" />
+            <h2 className="text-3xl font-bold tracking-tight text-white">
+                Welcome to NukeJS
+            </h2>
+            <p className="text-slate-300 max-w-sm text-sm leading-relaxed">
+                React. Weaponized. — now with utility-first styling.
+            </p>
+            <a
+                href="/docs"
+                className="mt-2 px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition-colors text-sm font-medium text-white"
+            >
+                Read the docs →
+            </a>
+        </div>
     )
 }`} />
 
                 <h2>Tailwind with a client component</h2>
                 <p>Client components use Tailwind classes exactly the same way — as long as the CSS is loaded in the layout, it applies everywhere:</p>
-                <CodeBlock filename="app/components/Dropdown.tsx" code={`"use client"
+                <CodeBlock filename="app/components/ThemeToggle.tsx" code={`"use client"
 import { useState } from 'react'
 
-export default function Dropdown({ options }: { options: string[] }) {
-    const [open, setOpen] = useState(false)
-    const [selected, setSelected] = useState(options[0])
+export default function ThemeToggle() {
+    const [dark, setDark] = useState(true)
 
     return (
-        <div className="relative inline-block">
-            <button
-                onClick={() => setOpen(o => !o)}
-                className="flex items-center gap-2 px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white hover:border-orange-500 transition-colors"
-            >
-                {selected}
-                <span className={open ? 'rotate-180 transition-transform' : 'transition-transform'}>▾</span>
-            </button>
-            {open && (
-                <ul className="absolute top-full mt-1 left-0 bg-zinc-900 border border-zinc-700 rounded-lg py-1 min-w-full z-10 shadow-xl">
-                    {options.map(opt => (
-                        <li key={opt}>
-                            <button
-                                onClick={() => { setSelected(opt); setOpen(false) }}
-                                className="w-full text-left px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors"
-                            >
-                                {opt}
-                            </button>
-                        </li>
-                    ))}
-                </ul>
-            )}
-        </div>
+        <button
+            onClick={() => setDark(d => !d)}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-700 bg-slate-800 text-sm text-slate-200 hover:border-indigo-500 transition-colors"
+        >
+            <span>{dark ? '🌙' : '☀️'}</span>
+            {dark ? 'Dark mode' : 'Light mode'}
+        </button>
     )
 }`} />
 
                 <div className="doc-callout tip">
                     <span className="doc-callout-icon">✅</span>
                     <div className="doc-callout-body">
-                        <strong>Use Tailwind v4 — it's faster and config-free</strong>
-                        Tailwind v4 eliminates the <code>tailwind.config.js</code> file entirely. Everything — content paths, theme tokens, plugins — lives in your CSS file.
+                        <strong>Use Tailwind v4 — it's config-free</strong>
+                        <p>Tailwind v4 eliminates <code>tailwind.config.js</code> entirely. Theme tokens, custom utilities, and source paths all live in your CSS entry file via <code>@theme</code>, <code>@utility</code>, and <code>@source</code> directives.</p>
                     </div>
                 </div>
             </div>
