@@ -2,8 +2,8 @@ import { useHtml } from "nukejs"
 import CodeBlock from "../../components/docs/CodeBlock"
 
 export default function ErrorHandlingPage() {
-    const title = "Handling 404 & 500 Errors"
-    const subtitle = "Create custom error pages for not-found routes and server failures — file-based, just like any other page."
+    const title = "Error Pages"
+    const subtitle = "Custom _404.tsx and _500.tsx pages — file-based, layout-aware, and fully typed with error props."
     useHtml({ title })
     return (
         <article className="doc-article">
@@ -14,25 +14,33 @@ export default function ErrorHandlingPage() {
 
             <div className="doc-body">
 
-                {/* ── 404 ──────────────────────────────────────────── */}
-                <h2>Custom 404 page</h2>
+                <h2>Overview</h2>
                 <p>
-                    Create <code>app/pages/404.tsx</code> and export a default component.
-                    NukeJS renders this page whenever a request doesn't match any route.
-                    The file works exactly like any other page — it can call <code>useHtml()</code>,
-                    use layouts, and fetch data.
+                    Place <code>_404.tsx</code> and <code>_500.tsx</code> directly in <code>app/pages/</code>.
+                    They are standard server components and support everything regular pages do: layouts,{" "}
+                    <code>useHtml()</code>, client components, and HMR in dev.
+                    The underscore prefix tells NukeJS these are reserved error pages — they are{" "}
+                    <strong>excluded from routing</strong>, so <code>/_404</code> and <code>/_500</code> are
+                    never reachable as URLs.
                 </p>
-                <CodeBlock filename="app/pages/404.tsx" code={`import { useHtml } from 'nukejs'
+
+                {/* ── _404.tsx ─────────────────────────────────────── */}
+                <h2><code>_404.tsx</code> — Page Not Found</h2>
+                <p>
+                    Rendered whenever no route matches the requested URL. NukeJS automatically
+                    responds with a <code>404</code> HTTP status code.
+                </p>
+                <CodeBlock filename="app/pages/_404.tsx" code={`import { useHtml } from 'nukejs'
 import { Link } from 'nukejs'
 
 export default function NotFound() {
-    useHtml({ title: '404 — Page Not Found' })
+    useHtml({ title: 'Page Not Found' })
 
     return (
-        <main style={{ textAlign: 'center', padding: '4rem 1rem' }}>
-            <h1>404</h1>
+        <main>
+            <h1>404 — Page Not Found</h1>
             <p>The page you're looking for doesn't exist.</p>
-            <Link href="/">Go back home</Link>
+            <Link href="/">Go home</Link>
         </main>
     )
 }`} />
@@ -40,53 +48,145 @@ export default function NotFound() {
                 <div className="doc-callout info">
                     <span className="doc-callout-icon">ℹ️</span>
                     <div className="doc-callout-body">
-                        <strong>Layouts wrap your 404 page too</strong>{" "}
-                        Your root <code>layout.tsx</code> is applied to the 404 page just like any other page,
-                        so your nav and footer appear automatically.
+                        <strong>Layouts wrap error pages too</strong>{" "}
+                        The root <code>layout.tsx</code> is applied to both <code>_404.tsx</code> and{" "}
+                        <code>_500.tsx</code>, so your nav and footer appear automatically — no extra wiring needed.
                     </div>
                 </div>
 
-                <h2>Not-found inside dynamic routes</h2>
+                {/* ── _500.tsx ─────────────────────────────────────── */}
+                <h2><code>_500.tsx</code> — Internal Server Error</h2>
                 <p>
-                    When a dynamic route fetches a resource that doesn't exist (e.g. a blog post by slug),
-                    return a <code>null</code> render or a dedicated component rather than throwing.
-                    NukeJS will still respond with a 200 unless you use the <code>useRequest()</code> hook
-                    to set the status code explicitly:
+                    Rendered when a page handler throws an unhandled error. NukeJS automatically
+                    forwards error details as props so you can surface them — especially useful
+                    during development.
                 </p>
-                <CodeBlock filename="app/pages/blog/[slug].tsx" code={`import { useHtml } from 'nukejs'
-import { useRequest } from 'nukejs'
+                <CodeBlock filename="app/pages/_500.tsx" code={`import { useHtml } from 'nukejs'
+import { Link } from 'nukejs'
 
-export default async function BlogPost({ slug }: { slug: string }) {
-    const post = await fetchPost(slug)
+interface ErrorProps {
+    errorMessage?: string  // human-readable error description
+    errorStatus?:  string  // HTTP status code if set on the thrown error
+    errorStack?:   string  // stack trace — only populated in development
+}
 
-    if (!post) {
-        useHtml({ title: '404 — Post Not Found' })
-        useRequest().status(404)         // ← set the HTTP status code
+export default function ServerError({ errorMessage, errorStack }: ErrorProps) {
+    useHtml({ title: 'Something went wrong' })
 
-        return (
-            <main style={{ textAlign: 'center', padding: '4rem 1rem' }}>
-                <h1>Post not found</h1>
-                <p>
-                    <strong>{slug}</strong> doesn't exist or may have been removed.
-                </p>
-                <a href="/blog">← Back to blog</a>
-            </main>
-        )
-    }
-
-    useHtml({ title: post.title })
     return (
-        <article>
-            <h1>{post.title}</h1>
-            <p>{post.content}</p>
-        </article>
+        <main>
+            <h1>500 — Server Error</h1>
+            <p>Something went wrong on our end. Please try again.</p>
+            {errorMessage && <p><strong>{errorMessage}</strong></p>}
+            {errorStack   && <pre>{errorStack}</pre>}
+            <Link href="/">Go home</Link>
+        </main>
     )
 }`} />
 
-                <h2>404 in API routes</h2>
+                <div className="doc-callout info">
+                    <span className="doc-callout-icon">ℹ️</span>
+                    <div className="doc-callout-body">
+                        <strong><code>errorStack</code> is dev-only</strong>{" "}
+                        The stack trace is only populated when <code>NODE_ENV !== 'production'</code>.
+                        In production, <code>errorStack</code> is always <code>undefined</code>,
+                        so the <code>{"<pre>"}</code> block won't render — no accidental leaks.
+                    </div>
+                </div>
+
+                {/* ── Server errors ─────────────────────────────────── */}
+                <h2>Server errors</h2>
                 <p>
-                    Inside <code>server/</code> handlers, send a 404 response with <code>res.json()</code>
-                    or <code>res.status(404).end()</code>:
+                    Any unhandled <code>throw</code> inside a server page component — including async data
+                    fetching — routes to <code>_500.tsx</code>. The error message and stack trace are
+                    forwarded as props automatically:
+                </p>
+                <CodeBlock filename="app/pages/dashboard.tsx" code={`export default async function Dashboard() {
+    const data = await fetchData() // throws → _500.tsx is rendered
+    return <main>{data.name}</main>
+}`} />
+
+                <p>
+                    Attach a <code>status</code> property to a thrown error to control the HTTP status
+                    code sent with the response. The value is forwarded to <code>_500.tsx</code> as the{" "}
+                    <code>errorStatus</code> prop:
+                </p>
+                <CodeBlock filename="app/pages/blog/[slug].tsx" code={`export default async function Post({ slug }: { slug: string }) {
+    const post = await db.getPost(slug)
+
+    if (!post) {
+        const err = new Error('Post not found')
+        ;(err as any).status = 404
+        throw err  // _500.tsx receives errorMessage="Post not found", errorStatus="404"
+    }
+
+    return <article>{post.title}</article>
+}`} />
+
+                {/* ── Client errors ─────────────────────────────────── */}
+                <h2>Client errors</h2>
+                <p>
+                    Unhandled errors in client components and async code are automatically caught and
+                    routed to <code>_500.tsx</code> via an in-place SPA navigation — no full page reload.
+                    Three mechanisms cover all cases:
+                </p>
+                <div className="doc-table-wrap">
+                    <table className="doc-table">
+                        <thead>
+                            <tr><th>Mechanism</th><th>What it catches</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>React Error Boundary</td>
+                                <td>Render and lifecycle errors in every <code>"use client"</code> component</td>
+                            </tr>
+                            <tr>
+                                <td><code>window.onerror</code></td>
+                                <td>Synchronous throws in event handlers and other non-React code</td>
+                            </tr>
+                            <tr>
+                                <td><code>window.onunhandledrejection</code></td>
+                                <td>Unhandled <code>Promise</code> rejections from <code>async</code> functions</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <CodeBlock filename="app/components/FaultyButton.tsx" code={`"use client"
+
+export default function FaultyButton() {
+    const handleClick = () => {
+        throw new Error('Something broke!')  // caught by window.onerror → _500.tsx
+    }
+
+    return <button onClick={handleClick}>Click me</button>
+}`} />
+
+                <CodeBlock filename="app/components/FaultyFetch.tsx" code={`"use client"
+import { useEffect } from 'react'
+
+export default function FaultyFetch() {
+    useEffect(() => {
+        // Unhandled rejection → caught by window.onunhandledrejection → _500.tsx
+        fetch('/api/broken').then(res => {
+            if (!res.ok) throw new Error(\`API error \${res.status}\`)
+        })
+    }, [])
+
+    return <div>Loading...</div>
+}`} />
+
+                <p>
+                    The <code>_500.tsx</code> page receives <code>errorMessage</code> and{" "}
+                    <code>errorStack</code> props from client errors just like server errors, so a
+                    single error page handles both origins consistently.
+                </p>
+
+                {/* ── 404 in API routes ─────────────────────────────── */}
+                <h2>Errors in API routes</h2>
+                <p>
+                    API routes in <code>server/</code> don't use the error pages — they respond
+                    directly. Use <code>res.json()</code> with the appropriate status code:
                 </p>
                 <CodeBlock filename="server/posts/[id].ts" code={`import type { ApiRequest, ApiResponse } from 'nukejs'
 
@@ -100,236 +200,83 @@ export async function GET(req: ApiRequest, res: ApiResponse) {
     }
 
     res.json(post)
-}`} />
-
-                {/* ── 500 ──────────────────────────────────────────── */}
-                <h2>Custom 500 page</h2>
-                <p>
-                    Create <code>app/pages/500.tsx</code> to replace the default error page.
-                    NukeJS renders it when an unhandled exception is thrown during server-side rendering.
-                </p>
-                <CodeBlock filename="app/pages/500.tsx" code={`import { useHtml } from 'nukejs'
-import { Link } from 'nukejs'
-
-export default function ServerError() {
-    useHtml({ title: '500 — Server Error' })
-
-    return (
-        <main style={{ textAlign: 'center', padding: '4rem 1rem' }}>
-            <h1>500</h1>
-            <p>Something went wrong on our end. We're looking into it.</p>
-            <Link href="/">Return to home</Link>
-        </main>
-    )
-}`} />
-
-                <h2>Catching errors inside a page</h2>
-                <p>
-                    For more control — such as distinguishing a failed API call from a rendering crash —
-                    wrap async logic in a <code>try/catch</code> and render an inline error state instead
-                    of letting the exception bubble up to the global 500 page:
-                </p>
-                <CodeBlock filename="app/pages/dashboard.tsx" code={`import { useHtml } from 'nukejs'
-import { useRequest } from 'nukejs'
-
-export default async function Dashboard() {
-    useHtml({ title: 'Dashboard' })
-
-    let data
-    try {
-        data = await fetchDashboardData()
-    } catch (err) {
-        useRequest().status(500)
-        return (
-            <main>
-                <h1>Failed to load dashboard</h1>
-                <p>Please try again in a moment.</p>
-            </main>
-        )
-    }
-
-    return (
-        <main>
-            <h1>Dashboard</h1>
-            <Stats data={data} />
-        </main>
-    )
-}`} />
-
-                <h2>500 errors in API routes</h2>
-                <p>
-                    Wrap handler logic in <code>try/catch</code> and return a structured error response.
-                    Avoid leaking stack traces or internal details to the client in production:
-                </p>
-                <CodeBlock filename="server/reports/index.ts" code={`import type { ApiRequest, ApiResponse } from 'nukejs'
-
-export async function GET(req: ApiRequest, res: ApiResponse) {
-    try {
-        const report = await generateReport()
-        res.json(report)
-    } catch (err) {
-        console.error('[GET /reports]', err)
-
-        const message =
-            process.env.ENVIRONMENT === 'production'
-                ? 'Internal server error'
-                : (err as Error).message
-
-        res.json({ error: message }, 500)
-    }
-}`} />
-
-                {/* ── Middleware approach ───────────────────────────── */}
-                <h2>Centralised error handling with middleware</h2>
-                <p>
-                    <code>middleware.ts</code> runs before every request, making it the right place to
-                    intercept unmatched routes and serve a consistent 404 response across both API and
-                    page requests:
-                </p>
-                <CodeBlock filename="middleware.ts" code={`import type { IncomingMessage, ServerResponse } from 'http'
-
-export default async function middleware(
-    req: IncomingMessage,
-    res: ServerResponse,
-) {
-    // Log every request with timing
-    const start = Date.now()
-    res.on('finish', () => {
-        const ms = Date.now() - start
-        const level = res.statusCode >= 500 ? 'ERROR' : res.statusCode >= 400 ? 'WARN' : 'INFO'
-        console.log(\`[\${level}] \${req.method} \${req.url} \${res.statusCode} — \${ms}ms\`)
-    })
-
-    // Block /admin routes without a valid token
-    if (req.url?.startsWith('/admin')) {
-        const token = req.headers.authorization?.split(' ')[1]
-        if (!isValidToken(token)) {
-            res.statusCode = 401
-            res.setHeader('Content-Type', 'application/json')
-            res.end(JSON.stringify({ error: 'Unauthorized' }))
-            return
-        }
-    }
-    // Falls through to normal routing
 }
 
-function isValidToken(token: string | undefined): boolean {
-    return token === process.env.ADMIN_TOKEN
+export async function POST(req: ApiRequest, res: ApiResponse) {
+    try {
+        const created = await db.createPost(req.body)
+        res.json(created, 201)
+    } catch (err) {
+        console.error('[POST /posts]', err)
+        res.json({ error: 'Internal server error' }, 500)
+    }
 }`} />
 
-                <div className="doc-callout warning">
-                    <span className="doc-callout-icon">⚠️</span>
-                    <div className="doc-callout-body">
-                        <strong>Middleware runs before the 404 page</strong>{" "}
-                        If middleware calls <code>res.end()</code>, NukeJS stops immediately —
-                        the custom 404 or 500 page is never rendered. Only return from middleware
-                        without ending the response to let normal routing (and error pages) take over.
-                    </div>
-                </div>
-
-                {/* ── Error page with layout ────────────────────────── */}
-                <h2>Full example — branded error pages</h2>
-                <p>Here's a production-ready pair of error pages that share a common layout:</p>
-                <CodeBlock filename="app/pages/404.tsx" code={`import { useHtml } from 'nukejs'
-import { Link } from 'nukejs'
-
-export default function NotFound() {
-    useHtml({
-        title: '404 — Not Found',
-        meta: [{ name: 'robots', content: 'noindex' }],
-    })
-
-    return (
-        <section className="error-page">
-            <span className="error-code">404</span>
-            <h1>Page not found</h1>
-            <p>
-                The URL <code>{typeof window !== 'undefined' ? window.location.pathname : ''}</code>{' '}
-                doesn't match any page on this site.
-            </p>
-            <div className="error-actions">
-                <Link href="/" className="btn btn-primary">Go home</Link>
-                <Link href="/docs" className="btn btn-secondary">Browse docs</Link>
-            </div>
-        </section>
-    )
-}`} />
-                <CodeBlock filename="app/pages/500.tsx" code={`import { useHtml } from 'nukejs'
-import { Link } from 'nukejs'
-
-export default function ServerError() {
-    useHtml({
-        title: '500 — Server Error',
-        meta: [{ name: 'robots', content: 'noindex' }],
-    })
-
-    return (
-        <section className="error-page">
-            <span className="error-code">500</span>
-            <h1>Something went wrong</h1>
-            <p>
-                An unexpected error occurred. Our team has been notified.
-                Try refreshing the page or come back later.
-            </p>
-            <div className="error-actions">
-                <Link href="/" className="btn btn-primary">Go home</Link>
-            </div>
-        </section>
-    )
-}`} />
-
-                <div className="doc-callout tip">
-                    <span className="doc-callout-icon">✅</span>
-                    <div className="doc-callout-body">
-                        <strong>Add <code>noindex</code> to error pages</strong>{" "}
-                        Both examples above include a <code>{'<meta name="robots" content="noindex">'}</code> tag
-                        via <code>useHtml()</code>. This prevents search engines from indexing your error pages
-                        and polluting your SEO profile.
-                    </div>
-                </div>
-
-                {/* ── Summary table ────────────────────────────────── */}
-                <h2>Quick reference</h2>
+                {/* ── Behaviour table ───────────────────────────────── */}
+                <h2>Behaviour reference</h2>
                 <div className="doc-table-wrap">
                     <table className="doc-table">
                         <thead>
                             <tr>
                                 <th>Scenario</th>
-                                <th>Recommended approach</th>
+                                <th>Without error page</th>
+                                <th>With error page</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td>No route matched</td>
-                                <td><code>app/pages/404.tsx</code></td>
+                                <td>Server page throws</td>
+                                <td>Plain-text <code>Internal Server Error</code> (500)</td>
+                                <td><code>_500.tsx</code> rendered with error props</td>
                             </tr>
                             <tr>
-                                <td>Dynamic route — resource missing</td>
-                                <td><code>useRequest().status(404)</code> + inline JSX</td>
+                                <td>Client component render error</td>
+                                <td>React crashes the component subtree</td>
+                                <td><code>_500.tsx</code> rendered in-place, no reload</td>
                             </tr>
                             <tr>
-                                <td>API route — resource missing</td>
-                                <td><code>res.json(&#123; error &#125;, 404)</code></td>
+                                <td>Unhandled event handler throw</td>
+                                <td>Browser console error only</td>
+                                <td><code>_500.tsx</code> rendered in-place, no reload</td>
                             </tr>
                             <tr>
-                                <td>Unhandled SSR exception</td>
-                                <td><code>app/pages/500.tsx</code></td>
+                                <td>Unhandled promise rejection</td>
+                                <td>Browser console error only</td>
+                                <td><code>_500.tsx</code> rendered in-place, no reload</td>
                             </tr>
                             <tr>
-                                <td>Page with risky async logic</td>
-                                <td><code>try/catch</code> + <code>useRequest().status(500)</code></td>
+                                <td>Unknown URL</td>
+                                <td>Plain-text <code>Page not found</code> (404)</td>
+                                <td><code>_404.tsx</code> rendered with 404 status</td>
                             </tr>
                             <tr>
-                                <td>API route — server failure</td>
-                                <td><code>try/catch</code> + <code>res.json(&#123; error &#125;, 500)</code></td>
+                                <td><code>{"<Link>"}</code> to unknown URL</td>
+                                <td>Full page reload</td>
+                                <td>In-place SPA navigation, no reload</td>
                             </tr>
                             <tr>
-                                <td>Auth / access control</td>
-                                <td><code>middleware.ts</code> + <code>res.statusCode = 401</code></td>
+                                <td>HMR save of <code>_404.tsx</code> / <code>_500.tsx</code></td>
+                                <td>—</td>
+                                <td>Current page re-fetches immediately</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
+
+                {/* ── Notes ─────────────────────────────────────────── */}
+                <div className="doc-callout tip">
+                    <span className="doc-callout-icon">✅</span>
+                    <div className="doc-callout-body">
+                        <strong>Production notes</strong>
+                        <p>
+                            Both error pages are fully bundled into the production output for Node.js and
+                            Vercel — no runtime file-system access is required. The correct HTTP status
+                            code (404 or 500) is always set on the response, and <code>errorStack</code> is
+                            stripped in production so stack traces never reach end users.
+                        </p>
+                    </div>
+                </div>
+
             </div>
         </article>
     )
