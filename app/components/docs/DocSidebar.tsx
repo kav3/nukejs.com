@@ -17,6 +17,7 @@ const NAV = [
             { label: 'Routing', href: '/docs/routing' },
             { label: 'Layouts', href: '/docs/layouts' },
             { label: 'Client Components', href: '/docs/client-components' },
+            { label: 'State Management', href: '/docs/state-management' },
             { label: 'Link & Navigation', href: '/docs/link-navigation' },
             { label: 'API Routes', href: '/docs/api-routes' },
             { label: 'Middleware', href: '/docs/middleware' },
@@ -29,6 +30,7 @@ const NAV = [
         items: [
             { label: 'useHtml()', href: '/docs/head-management' },
             { label: 'useRequest()', href: '/docs/use-request' },
+            { label: 'Request Store', href: '/docs/request-store' },
             { label: 'Configuration', href: '/docs/configuration' },
             { label: 'Deploying', href: '/docs/deploying' },
             { label: 'Internationalisation (i18n)', href: '/docs/i18n' },
