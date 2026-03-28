@@ -54,6 +54,45 @@ export default function NotFound() {
                     </div>
                 </div>
 
+                {/* ── Layout loop ───────────────────────────────────── */}
+                <h2>Preventing layout loops</h2>
+                <p>
+                    Because error pages inherit the root layout, a bug inside <code>layout.tsx</code>{" "}
+                    — or any component it renders — will cause an infinite loop: the layout throws,
+                    NukeJS tries to render the error page, the layout throws again, and so on.
+                </p>
+                <p>
+                    Guard against this by wrapping every non-essential layout component in a{" "}
+                    <code>try / catch</code>. If the component throws, return only{" "}
+                    <code>children</code> so the page content (including the error page) still renders:
+                </p>
+                <CodeBlock filename="app/pages/layout.tsx" code={`import Component from "../component"
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+    try {
+        return (
+            <>
+                <div>{children}</div>
+                <div><Component /></div>
+            </>
+        )
+    } catch {
+        // Component (or the layout itself) threw — fall back to bare children
+        // so error pages can render without triggering another error cycle.
+        return <>{children}</>
+    }
+}`} />
+
+                <div className="doc-callout warning">
+                    <span className="doc-callout-icon">⚠️</span>
+                    <div className="doc-callout-body">
+                        <strong>Any layout component can trigger the loop</strong>{" "}
+                        It doesn't have to be the layout function itself — a single crashing child
+                        component (e.g. a Nav or Footer that fetches data) is enough. Wrap
+                        anything that can fail.
+                    </div>
+                </div>
+
                 {/* ── _500.tsx ─────────────────────────────────────── */}
                 <h2><code>_500.tsx</code> — Internal Server Error</h2>
                 <p>
