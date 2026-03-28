@@ -57,7 +57,6 @@ import { useHtml } from "nukejs";
 export default function Layout({ children }: { children: ReactNode }) {
     useHtml({
         title: (t) => { return \`Nukejs - \${t}\` },
-        script: [{ defer: true, src: "/tailwindcss" }],
         link: [{
             rel: "stylesheet",
             href: "/main.css"
