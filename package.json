@@ -17,7 +17,7 @@
   "dependencies": {
     "@types/node": "^25.3.3",
     "highlight.js": "^11.11.1",
-    "nukejs": "^0.0.16",
+    "nukejs": "^0.0.20",
     "tsx": "^4.21.0"
   },
   "devDependencies": {
