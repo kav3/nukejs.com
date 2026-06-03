@@ -39,18 +39,35 @@ body {
 
                 <h2>Start the watcher with middleware</h2>
                 <p>NukeJS loads <code>middleware.ts</code> before every request. Spawn the Tailwind CLI watcher there in development so it runs inside the same <code>nuke dev</code> process — no second terminal required:</p>
-                <CodeBlock filename="middleware.ts" code={`import { spawn } from 'child_process'
-import type { IncomingMessage, ServerResponse } from 'http'
+                <CodeBlock filename="middleware.ts" code={`import type { IncomingMessage, ServerResponse } from 'http'
 
-if (process.env.ENVIRONMENT !== 'production') {
+const isDev = process.env.NODE_ENV !== 'production'
+
+// Only load child_process in development
+if (isDev) {
+    const { spawn } = await import('child_process')
+
     spawn(
         'npx',
-        ['@tailwindcss/cli', '-i', './global.css', '-o', './app/public/styles.css', '--watch'],
-        { stdio: 'inherit', shell: true }
+        [
+            '@tailwindcss/cli',
+            '-i',
+            './global.css',
+            '-o',
+            './app/public/styles.css',
+            '--watch',
+        ],
+        {
+            stdio: 'inherit',
+            shell: true,
+        }
     )
 }
 
-export default async function middleware(req: IncomingMessage, res: ServerResponse) {
+export default async function middleware(
+    req: IncomingMessage,
+    res: ServerResponse
+) {
     // your existing middleware logic
 }`} />
                 <p>The <code>ENVIRONMENT !== 'production'</code> guard ensures the watcher only runs locally. In production the CSS is compiled by the <code>build</code> script before NukeJS bundles the app.</p>
