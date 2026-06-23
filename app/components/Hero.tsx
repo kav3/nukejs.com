@@ -7,7 +7,7 @@ export default function Hero() {
             <div className="hero-content">
                 <div className="badge">Introducing NukeJS — v{VERSION}</div>
                 <h1>React. <em>Weaponized.</em></h1>
-                <p className="tagline">SSR, HMR, file-based routing, and full React support — out of the box. Deploy to Vercel or Node in one command.</p>
+                <p className="tagline">Built-in SSR, HMR, file-based routing, and full React support. Deploy to Vercel, Node, or Cloudflare Workers in one command.</p>
                 <div className="hero-actions">
                     <Install />
                     <a href={GITHUB_URL} className="btn-ghost" target="_blank">

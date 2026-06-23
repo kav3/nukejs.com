@@ -49,8 +49,37 @@ export default function About() {
                             <tr><td>meta</td><td>object[]</td><td>Each object becomes a <code>&lt;meta&gt;</code> element.</td></tr>
                             <tr><td>link</td><td>object[]</td><td>Each object becomes a <code>&lt;link&gt;</code> element.</td></tr>
                             <tr><td>script</td><td>object[]</td><td>Script tags. Supports <code>type</code>, <code>src</code>, inline <code>children</code>, and <code>position</code> (<code>"head"</code> | <code>"body"</code>).</td></tr>
+                            <tr><td>style</td><td>object[]</td><td>Inline <code>&lt;style&gt;</code> blocks injected into <code>&lt;head&gt;</code>. Each entry accepts <code>content</code> (raw CSS) and an optional <code>media</code> attribute.</td></tr>
                             <tr><td>htmlAttrs</td><td>object</td><td>Attributes set on <code>&lt;html&gt;</code> (e.g. <code>lang</code>).</td></tr>
                             <tr><td>bodyAttrs</td><td>object</td><td>Attributes set on <code>&lt;body&gt;</code>.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h2>Inline style injection</h2>
+                <p>
+                    The <code>style</code> option injects <code>&lt;style&gt;</code> blocks
+                    into <code>&lt;head&gt;</code>. This is useful for critical CSS that must
+                    be present before first paint, or for per-page styles that vary by route:
+                </p>
+                <CodeBlock filename="app/pages/dashboard.tsx" code={`import { useHtml } from 'nukejs'
+
+export default function Dashboard() {
+    useHtml({
+        style: [
+            { content: \`.chart { height: 400px; }\` },
+            { content: \`.sidebar { width: 260px; }\`, media: '(min-width: 768px)' },
+        ],
+    })
+
+    return <main>...</main>
+}`} />
+                <div className="doc-table-wrap">
+                    <table className="doc-table">
+                        <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>content</code></td><td><code>string</code></td><td>Raw CSS injected inside a <code>&lt;style&gt;</code> tag.</td></tr>
+                            <tr><td><code>media</code></td><td><code>string</code> (optional)</td><td>Value for the <code>media</code> attribute — e.g. <code>'print'</code>, <code>'(prefers-color-scheme: dark)'</code>.</td></tr>
                         </tbody>
                     </table>
                 </div>
