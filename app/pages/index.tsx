@@ -3,6 +3,7 @@ import Hero from "../components/Hero";
 import SampleCodes from "../components/SampleCodes";
 import Deploy from "../components/Deploy";
 import Features from "../components/Features";
+import Sponsors from "../components/Sponsors";
 import { SITE_NAME, SITE_URL, SITE_DESCRIPTION } from "../consts";
 
 const jsonLd = {
@@ -44,5 +45,6 @@ export default async function Index() {
         <SampleCodes />
         <Features />
         <Deploy />
+        <Sponsors />
     </>
 }
