@@ -520,14 +520,16 @@ pre {
     vertical-align: middle;
 }
 
-/* ── DEPLOY STRIP ── */
-.deploy-strip {
+/* ── STRIP CARDS (Deploy & Sponsors) ── */
+.deploy-strip,
+.sponsors-strip {
     border-top: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
     background: var(--surface);
 }
 
-.deploy-inner {
+.deploy-inner,
+.sponsors-inner {
     max-width: 1060px;
     margin: 0 auto;
     padding: 3.5rem 2rem;
@@ -538,11 +540,8 @@ pre {
     flex-wrap: wrap;
 }
 
-.deploy-text .eyebrow {
-    margin-bottom: 0.5rem;
-}
-
-.deploy-text h3 {
+.deploy-text h3,
+.sponsors-text h3 {
     font-size: 1.5rem;
     font-weight: 700;
     letter-spacing: -0.025em;
@@ -550,19 +549,27 @@ pre {
     margin-bottom: 0.4rem;
 }
 
-.deploy-text p {
+.deploy-text p,
+.sponsors-text p {
     font-size: 0.85rem;
     color: var(--muted);
     line-height: 1.65;
 }
 
-.deploy-targets {
+.deploy-text .eyebrow,
+.sponsors-text .eyebrow {
+    margin-bottom: 0.5rem;
+}
+
+.deploy-targets,
+.sponsors-list {
     display: flex;
     gap: 1rem;
     flex-shrink: 0;
 }
 
-.deploy-card {
+.deploy-card,
+.sponsor-card {
     background: var(--bg);
     border: 1px solid var(--border2);
     border-radius: 10px;
@@ -572,26 +579,84 @@ pre {
     transition: border-color 0.2s;
 }
 
-.deploy-card:hover {
+.deploy-card:hover,
+.sponsor-card:hover {
     border-color: var(--accent);
 }
 
-.deploy-logo {
+.deploy-logo,
+.sponsor-logo {
     font-size: 1.6rem;
     margin-bottom: 0.5rem;
 }
 
-.deploy-name {
+.deploy-name,
+.sponsor-name {
     font-size: 0.75rem;
     font-weight: 600;
     color: var(--text);
     letter-spacing: 0.04em;
 }
 
-.deploy-note {
+.deploy-note,
+.sponsor-note {
     font-size: 0.65rem;
     color: var(--muted);
     margin-top: 0.2rem;
+}
+
+/* ── RESPONSIVE STRIP CARDS ── */
+@media (max-width: 640px) {
+    .deploy-inner,
+    .sponsors-inner {
+        padding: 2.5rem 1.25rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2rem;
+    }
+
+    .deploy-text h3,
+    .sponsors-text h3 {
+        font-size: 1.25rem;
+    }
+
+    .deploy-targets,
+    .sponsors-list {
+        width: 100%;
+        gap: 0.75rem;
+    }
+
+    .deploy-card,
+    .sponsor-card {
+        flex: 1 1 90px;
+        padding: 1rem 1.25rem;
+        min-width: 90px;
+        max-width: none;
+    }
+}
+
+@media (max-width: 400px) {
+    .deploy-targets,
+    .sponsors-list {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .deploy-card,
+    .sponsor-card {
+        max-width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        text-align: left;
+        padding: 0.875rem 1.25rem;
+    }
+
+    .deploy-logo,
+    .sponsor-logo {
+        margin-bottom: 0;
+        flex-shrink: 0;
+    }
 }
 
 /* ── CTA ── */
