@@ -234,6 +234,15 @@ export default function Home() {
                     </a>
                     . Each page includes copy-pasteable code and live previews.
                 </p>
+
+                <h2>Starter: shadcn/ui + i18n</h2>
+                <p>
+                    Building a multi-language project? <a href="https://github.com/unenterprise/i18n-shadcn-nukejs" target="_blank" rel="noopener noreferrer">
+                        i18n-shadcn-nukejs
+                    </a> is a starter with shadcn/ui and locale-based routing (see the{" "}
+                    <a href="/docs/i18n">i18n guide</a>) already wired up:
+                </p>
+                <CodeBlock language="bash" filename="terminal" code={`npx degit unenterprise/i18n-shadcn-nukejs`} />
             </div>
         </article>
     )
