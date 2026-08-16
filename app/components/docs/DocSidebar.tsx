@@ -39,6 +39,9 @@ const NAV = [
     {
         group: 'Examples',
         items: [
+            { label: 'Cache', href: '/docs/examples/cache' },
+            { label: 'RenderComponent', href: '/docs/examples/render-component' },
+            { label: 'Web Workers', href: '/docs/examples/web-workers' },
             { label: 'Tailwind CSS', href: '/docs/examples/tailwindcss' },
             { label: 'Prisma', href: '/docs/examples/prisma' },
             { label: 'Mongoose', href: '/docs/examples/mongoose' },
