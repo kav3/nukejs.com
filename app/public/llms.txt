@@ -1,0 +1,296 @@
+# NukeJS
+
+> A minimal, opinionated full-stack React framework on Node.js that server-renders everything and hydrates only interactive parts.
+
+## Overview
+
+NukeJS is a full-stack React framework that prioritizes server-side rendering (SSR) with selective client-side hydration. It follows a "server-first" philosophy where pages are rendered on the server by default, and only components marked with "use client" are hydrated in the browser.
+
+## Key Features
+
+- **File-system routing** - Pages in `app/pages/` automatically become routes
+- **Server-first** - Everything runs on the server unless marked with "use client"
+- **Selective hydration** - Only interactive components ship JavaScript to the client
+- **API routes** - HTTP handlers in `server/` directory with clean HTTP method exports
+- **TypeScript-first** - Full type safety out of the box
+- **Zero configuration** - Works immediately with sensible defaults
+- **Request context** - Access URL params, query strings, and headers via `useRequest()` hook
+- **Cache API** - Request-scoped data caching with `cache()` to prevent redundant queries
+- **RenderComponent** - SSR components outside the page router for emails, PDFs, and API responses
+- **Web Workers** - First-class support with automatic bundling via `new URL(..., import.meta.url)`
+
+## Architecture
+
+### Server Components (Default)
+- Run on the server during SSR
+- Can use async/await for data fetching
+- Have access to Node.js APIs, databases, and file system
+- Do not ship JavaScript to the client
+- Can import and use server-only packages
+
+### Client Components
+- Marked with `"use client"` directive at the top of the file
+- Hydrated in the browser with event handlers and interactivity
+- Can use React hooks like `useState`, `useEffect`
+- Bundle size matters — keep them minimal
+
+### Hybrid Components
+- Server component can import client components
+- Client components render on server (SSR) then hydrate on client
+- Server components CANNOT be imported by client components
+
+## Core APIs
+
+### Routing
+- **File-system router** - `app/pages/index.tsx` → `/`, `app/pages/blog/[slug].tsx` → `/blog/:slug`
+- **Dynamic routes** - `[param]` for single segments, `[...path]` for catch-all routes
+- **Layouts** - `_layout.tsx` files wrap all pages in the same directory and subdirectories
+- **Navigation** - `<Link>` component for SPA navigation with prefetching
+
+### Request Context
+```typescript
+import { useRequest } from 'nukejs'
+
+const { pathname, url, params, query, headers } = useRequest()
+```
+- Works in both server and client components
+- Reactive on the client — updates on navigation
+- Secure — sensitive headers stripped from client
+
+### Data Fetching
+```typescript
+import { cache } from 'nukejs'
+
+// Request-scoped caching prevents duplicate queries
+const getUser = cache(async (id: number) => {
+  return db.user.findUnique({ where: { id } })
+})
+```
+- Dedups calls with identical arguments within a single request
+- Automatic for async server components
+- Works with any data source (database, API, file system)
+
+### API Routes
+```typescript
+// server/posts/index.ts
+export async function GET(req, res) {
+  const posts = await db.post.findMany()
+  res.writeHead(200, { 'Content-Type': 'application/json' })
+  res.end(JSON.stringify(posts))
+}
+
+export async function POST(req, res) {
+  const post = await db.post.create({ data: req.body })
+  res.writeHead(201, { 'Content-Type': 'application/json' })
+  res.end(JSON.stringify(post))
+}
+```
+- HTTP methods as named exports: `GET`, `POST`, `PUT`, `PATCH`, `DELETE`
+- Dynamic routes: `server/posts/[id].ts` → `/posts/:id`
+- Request body parsed automatically
+
+### SSR Outside Routes
+```typescript
+import { renderComponent } from 'nukejs/server'
+
+const html = await renderComponent(EmailTemplate, {
+  name: 'Alice',
+  link: 'https://example.com/verify'
+}, {
+  layouts: [EmailLayout],
+  url: '/email',
+  title: 'Welcome Email'
+})
+```
+- Render React components to HTML strings
+- Use for emails, PDFs, API responses, scheduled jobs
+- Full SSR support with hooks and async components
+
+### Web Workers
+```typescript
+// app/workers/task.worker.ts
+self.addEventListener('message', (e) => {
+  const result = processData(e.data)
+  self.postMessage({ result })
+})
+
+// app/components/Component.tsx
+"use client"
+const worker = new Worker(
+  new URL('../workers/task.worker.ts', import.meta.url),
+  { type: 'module' }
+)
+```
+- Standard `new URL(..., import.meta.url)` pattern
+- Automatic bundling and serving
+- Content-hashed URLs for cache invalidation
+
+### Head Management
+```typescript
+import { useHtml } from 'nukejs'
+
+useHtml({
+  title: 'Page Title',
+  description: 'Page description',
+  image: 'https://example.com/og.jpg',
+  lang: 'en',
+  script: [{ src: '/analytics.js' }],
+  style: [{ href: '/custom.css' }]
+})
+```
+
+### State Management
+```typescript
+import { useRouter } from 'nukejs'
+
+const router = useRouter()
+
+// SPA navigation
+router.push('/about')
+router.replace('/login')
+router.back()
+
+// Access current path
+console.log(router.path)  // reactive
+```
+
+## Project Structure
+
+```
+my-app/
+├── app/
+│   ├── pages/           # File-system routes
+│   │   ├── index.tsx    # / route
+│   │   ├── about.tsx    # /about route
+│   │   └── blog/
+│   │       ├── index.tsx      # /blog route
+│   │       └── [slug].tsx     # /blog/:slug route
+│   ├── components/      # Shared components
+│   ├── layouts/         # Layout components
+│   └── public/          # Static files (served at /)
+├── server/              # API routes
+│   ├── posts/
+│   │   ├── index.ts     # GET/POST /posts
+│   │   └── [id].ts      # GET/PUT/DELETE /posts/:id
+│   └── auth/
+│       └── login.ts     # POST /auth/login
+├── lib/                 # Utilities, database clients
+├── nuke.config.ts       # Framework configuration (optional)
+└── package.json
+```
+
+## Getting Started
+
+```bash
+# Create a new project
+npx create-nukejs-app my-app
+cd my-app
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm start
+```
+
+## Configuration
+
+```typescript
+// nuke.config.ts
+import { defineConfig } from 'nukejs'
+
+export default defineConfig({
+  port: 3000,
+  hostname: 'localhost',
+  env: {
+    DATABASE_URL: process.env.DATABASE_URL,
+  },
+  middleware: [], // Custom middleware
+})
+```
+
+## Deployment
+
+### Vercel
+```bash
+npm run build:vercel
+```
+Generates `.vercel/output` directory compatible with Vercel's Build Output API.
+
+### Cloudflare Pages
+```bash
+npm run build:cloudflare
+```
+Generates `_worker.js` for Cloudflare Pages Functions.
+
+### Docker
+```dockerfile
+FROM node:20-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --production
+COPY . .
+RUN npm run build
+EXPOSE 3000
+CMD ["npm", "start"]
+```
+
+## Integration Examples
+
+### Prisma
+```bash
+npm install prisma @prisma/client
+npx prisma init
+```
+Create singleton client, use directly in server components and API routes.
+
+### TailwindCSS
+```bash
+npm install -D tailwindcss postcss autoprefixer
+npx tailwindcss init -p
+```
+Configure content paths, import in `app/public/main.css`.
+
+### Mongoose
+```typescript
+import mongoose from 'mongoose'
+await mongoose.connect(process.env.MONGODB_URI)
+```
+Use directly in server components — connection persists across requests.
+
+### shadcn/ui
+```bash
+npx shadcn@latest init
+```
+Copy components to `app/components/ui`, use in server or client components.
+
+## Best Practices
+
+1. **Default to server components** - Only use "use client" when you need interactivity
+2. **Minimize client bundles** - Keep client components small and focused
+3. **Cache expensive operations** - Use `cache()` for database queries and API calls
+4. **Colocate data fetching** - Fetch data where it's used, not at the top level
+5. **Use TypeScript** - Full type safety prevents runtime errors
+6. **Leverage SSR** - Pre-render everything possible on the server
+7. **Progressive enhancement** - Start with server-rendered HTML, add interactivity as needed
+
+## Links
+
+- Documentation: https://nukejs.com/docs
+- GitHub: https://github.com/nuke-js/nukejs
+- Discord: https://discord.gg/nukejs
+- Examples: https://nukejs.com/docs
+
+## Version
+
+Current version: 0.0.31 (Updated: August 2026)
+
+---
+
+This file is intended for LLM consumption. For human-readable documentation, visit https://nukejs.com
