@@ -18,6 +18,8 @@ NukeJS is a full-stack React framework that prioritizes server-side rendering (S
 - **Cache API** - Request-scoped data caching with `cache()` to prevent redundant queries
 - **RenderComponent** - SSR components outside the page router for emails, PDFs, and API responses
 - **Web Workers** - First-class support with automatic bundling via `new URL(..., import.meta.url)`
+- **Lazy-loaded images** - Built-in `<Img>` component defers off-screen images via IntersectionObserver with blurred placeholders
+- **Fallback error page** - Self-contained HTML error screen when no custom `_404.tsx`/`_500.tsx` exists
 
 ## Architecture
 
@@ -138,6 +140,39 @@ useHtml({
   style: [{ href: '/custom.css' }]
 })
 ```
+
+### Error Handling
+- **File-based error pages** - `app/pages/_404.tsx` and `_404/_500` are reserved error pages (excluded from routing) that receive `errorMessage`, `errorStatus`, and (dev-only) `errorStack` props
+- Attach `status` to a thrown error to control the HTTP status code forwarded to `_500.tsx`
+- Client errors (render errors, `window.onerror`, unhandled rejections) route to `_500.tsx` in place via SPA navigation — no full reload
+- **Built-in fallback** - when no custom `_404.tsx`/`_500.tsx` exists, NukeJS renders a self-contained HTML error screen (status, message, dev stack trace) instead of a bare text response or silent redirect
+
+### Img Component (Lazy Loading)
+```tsx
+import { Img } from 'nukejs'
+
+// Renders a real <img> on the server; in the browser it lazily swaps in
+// `src` once the element nears the viewport (IntersectionObserver).
+// No "use client" directive needed in your own file.
+<Img
+  src="/photos/mountain.jpg"
+  alt="Mountain at sunrise"
+  width={800}
+  height={450}
+  placeholder="/photos/mountain-tiny.jpg" // blurred low-res until `src` loads
+  rootMargin="200px"                       // load this far ahead of viewport
+/>
+
+// Above-the-fold images: skip lazy-loading entirely
+<Img src="/hero.jpg" alt="Welcome" width={1600} height={600} eager />
+```
+- `src` (required) + `alt` (required) — standard image attributes
+- `width`/`height` — reserve space to prevent layout shift
+- `placeholder` — low-res/blurred image shown until `src` loads, then cross-fades
+- `rootMargin` — how far ahead of the viewport to start loading (default `"200px"`)
+- `eager` — load immediately, skipping IntersectionObserver (use for hero images)
+- `className`, `style`, `onLoad`, `onError` — standard img props/events
+- Browsers without IntersectionObserver, and the SSR render, always get the real image
 
 ### State Management
 ```typescript
@@ -289,7 +324,7 @@ Copy components to `app/components/ui`, use in server or client components.
 
 ## Version
 
-Current version: 0.0.31 (Updated: August 2026)
+Current version: 0.0.34 (Updated: August 2026)
 
 ---
 

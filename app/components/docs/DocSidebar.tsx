@@ -22,6 +22,7 @@ const NAV = [
             { label: 'API Routes', href: '/docs/api-routes' },
             { label: 'Middleware', href: '/docs/middleware' },
             { label: 'Static Files', href: '/docs/static-files' },
+            { label: 'Img Component', href: '/docs/img' },
             { label: 'Error Handling', href: '/docs/error-handling' },
         ],
     },
@@ -40,6 +41,7 @@ const NAV = [
         group: 'Examples',
         items: [
             { label: 'Cache', href: '/docs/examples/cache' },
+            { label: 'Img', href: '/docs/examples/img' },
             { label: 'RenderComponent', href: '/docs/examples/render-component' },
             { label: 'Web Workers', href: '/docs/examples/web-workers' },
             { label: 'Tailwind CSS', href: '/docs/examples/tailwindcss' },

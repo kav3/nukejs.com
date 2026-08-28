@@ -221,6 +221,23 @@ export default function FaultyFetch() {
                     single error page handles both origins consistently.
                 </p>
 
+                {/* ── Built-in fallback ──────────────────────────────── */}
+                <h2>Built-in fallback page</h2>
+                <p>
+                    If your project ships no custom <code>_404.tsx</code> / <code>_500.tsx</code>, NukeJS
+                    no longer falls back to a bare <code>Internal Server Error</code> text response (or a
+                    silent client-side redirect that went "nowhere"). Instead it renders a self-contained,
+                    framework-free HTML page that explains what happened — status code, message, and (in
+                    development) the stack trace.
+                </p>
+                <p>
+                    The fallback never depends on your pages, layouts, or client bundles, so it always
+                    renders even when the rest of the app is broken. It also renders <em>in place</em> on
+                    the client, so a client-side error won't trigger a full page reload. In production the
+                    stack trace is omitted and a hint to add a custom <code>app/pages/_&lt;status&gt;.tsx</code>{" "}
+                    is shown only in development.
+                </p>
+
                 {/* ── 404 in API routes ─────────────────────────────── */}
                 <h2>Errors in API routes</h2>
                 <p>
